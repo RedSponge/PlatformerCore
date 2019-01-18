@@ -7,10 +7,16 @@ public class PositionComponent implements Component {
 
     public float x = 0;
     public float y = 0;
+    public float z = 0;
 
-    public PositionComponent(float x, float y) {
+    public PositionComponent(float x, float y, float z) {
         this.x = x;
         this.y = y;
+        this.z = z;
+    }
+
+    public PositionComponent(float x, float y) {
+        this(x, y, 0);
     }
 
     public PositionComponent() {}

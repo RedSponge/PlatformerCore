@@ -10,11 +10,17 @@ public class Constants {
      */
     public static final Vector2 DEFAULT_GRAVITY = new Vector2(0, -10);
 
-    public static final int PHYSICS_PRIORITY = 1;
-    public static final int COLLISION_PRIORITY = 2;
-    public static final float FRICTION_MULTIPLIER = 0.95f;
 
-    public static final float MAX_HORIZ_VELOCITY = 200;
-    public static final float MAX_VERT_VELOCITY = 200;
+    public static final int PLAYER_PRIORITY = 1;
+    public static final int PHYSICS_PRIORITY = 2;
+    public static final int RENDERING_PRIORITY = 3;
 
+    public static final float DETECTOR_WIDTH = 4;
+    public static final float DETECTOR_HEIGHT = 10;
+    
+    public static final int PHYSICS_POSITION_ITERATIONS = 3;
+    public static final int PHYSICS_VELOCITY_ITERATIONS = 3;
+
+    public static final int BODY_USER_DATA = 0;
+    public static final int SENSOR_DATA_ID = 1;
 }
