@@ -46,11 +46,17 @@ public class TestScreen extends ScreenAdapter {
         this.entityEngine = new Engine();
         this.test = new Entity();
         this.test.add(new PositionComponent(0, 0));
-        this.test.add(new VelocityComponent(0, -10));
+        this.test.add(new VelocityComponent(0, 0));
         this.test.add(new SizeComponent(20, 30));
         this.test.add(new PhysicsComponent(BodyType.DynamicBody));
         this.test.add(new ColliderComponent());
         this.test.add(new PlayerComponent());
+
+        Entity test2 = new Entity();
+        test2.add(new PositionComponent(100, 100));
+        test2.add(new SizeComponent(20, 10));
+        test2.add(new VelocityComponent(0,0));
+        test2.add(new PhysicsComponent(BodyType.DynamicBody));
 
         PhysicsSystem physicsSystem = new PhysicsSystem(new Vector2(0, -10), Constants.DEFAULT_PPM);
         entityEngine.addSystem(physicsSystem);
@@ -60,10 +66,10 @@ public class TestScreen extends ScreenAdapter {
         entityEngine.addSystem(new RenderingSystem(shapeRenderer, gameViewport, test));
 
         entityEngine.addEntity(test);
+        entityEngine.addEntity(test2);
         entityEngine.addEntity(PlatformFactory.createPlatform(0, 0,300, 50));
         entityEngine.addEntity(PlatformFactory.createPlatform(350, 60,300, 50));
         entityEngine.addEntity(PlatformFactory.createPlatform(0, 150,300, 50));
-        entityEngine.addEntity(PlatformFactory.createPlatform(0, 0,300, 50));
 
         shapeRenderer.setAutoShapeType(true);
     }

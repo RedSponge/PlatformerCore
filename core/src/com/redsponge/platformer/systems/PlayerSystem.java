@@ -31,6 +31,7 @@ public class PlayerSystem extends IteratingSystem {
     private boolean jumping;
     private boolean moving;
     private boolean releasedJumpButton;
+    private boolean holdingWall;
 
     // Show Debug Messages
     private static final boolean DEBUG = false;
@@ -75,7 +76,7 @@ public class PlayerSystem extends IteratingSystem {
             }
         }
 
-        if(!jumping && !onGround) {
+        if(!jumping && !onGround && !holdingWall) {
             body.applyLinearImpulse(new Vector2(0, fallAmplifier), body.getWorldCenter(), true);
         }
 
@@ -122,6 +123,7 @@ public class PlayerSystem extends IteratingSystem {
     private void updateFlags(ColliderComponent collider) {
         moving = false;
         onGround = collider.downTouches > 0;
+        holdingWall = collider.rightTouches > 0 || collider.leftTouches > 0;
     }
 
 
