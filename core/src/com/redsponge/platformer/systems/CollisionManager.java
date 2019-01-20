@@ -45,19 +45,19 @@ public class CollisionManager implements ContactListener {
         final int adder = collisionStart ? 1 : -1;
 
         if(sensor == collider.right) {
-            Gdx.app.log("Collision", "Right Sensor Collision" + (collisionStart ? "Start" : "End") + "d!");
+            Gdx.app.debug("Collision", "Right Sensor Collision " + (collisionStart ? "Start" : "End") + "!");
             collider.rightTouches += adder;
         }
         if(sensor == collider.left) {
-            Gdx.app.log("Collision", "Left Sensor Collision " + (collisionStart ? "Start" : "End") + "!");
+            Gdx.app.debug("Collision", "Left Sensor Collision " + (collisionStart ? "Start" : "End") + "!");
             collider.leftTouches += adder;
         }
         if(sensor == collider.up) {
-            Gdx.app.log("Collision", "Up Sensor Collision " + (collisionStart ? "Start" : "End") + "!");
+            Gdx.app.debug("Collision", "Up Sensor Collision " + (collisionStart ? "Start" : "End") + "!");
             collider.upTouches += adder;
         }
         if(sensor == collider.down) {
-            Gdx.app.log("Collision", "Down Sensor Collision " + (collisionStart ? "Start" : "End") + "!");
+            Gdx.app.debug("Collision", "Down Sensor Collision " + (collisionStart ? "Start" : "End") + "!");
             collider.downTouches += adder;
         }
     }

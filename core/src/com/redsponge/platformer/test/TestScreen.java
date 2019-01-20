@@ -7,19 +7,19 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.redsponge.platformer.components.ColliderComponent;
-import com.redsponge.platformer.components.Mappers;
 import com.redsponge.platformer.components.PhysicsComponent;
 import com.redsponge.platformer.components.PlayerComponent;
 import com.redsponge.platformer.components.PositionComponent;
 import com.redsponge.platformer.components.SizeComponent;
 import com.redsponge.platformer.components.VelocityComponent;
+import com.redsponge.platformer.constants.Constants;
 import com.redsponge.platformer.systems.PhysicsDebugSystem;
 import com.redsponge.platformer.systems.PhysicsSystem;
 import com.redsponge.platformer.systems.PlayerSystem;
@@ -42,17 +42,17 @@ public class TestScreen extends ScreenAdapter {
 
     @Override
     public void show() {
-        this.gameViewport = new FitViewport(312, 256);
+        this.gameViewport = new FitViewport(1600, 900);
         this.entityEngine = new Engine();
         this.test = new Entity();
-        this.test.add(new PositionComponent(0, 100));
+        this.test.add(new PositionComponent(0, 0));
         this.test.add(new VelocityComponent(0, -10));
-        this.test.add(new SizeComponent(20, 20));
+        this.test.add(new SizeComponent(20, 30));
         this.test.add(new PhysicsComponent(BodyType.DynamicBody));
         this.test.add(new ColliderComponent());
         this.test.add(new PlayerComponent());
 
-        PhysicsSystem physicsSystem = new PhysicsSystem(new Vector2(0, -100));
+        PhysicsSystem physicsSystem = new PhysicsSystem(new Vector2(0, -10), Constants.DEFAULT_PPM);
         entityEngine.addSystem(physicsSystem);
         entityEngine.addEntityListener(Family.all(SizeComponent.class, PositionComponent.class, PhysicsComponent.class).get(), physicsSystem);
         entityEngine.addSystem(new PlayerSystem());
@@ -61,8 +61,10 @@ public class TestScreen extends ScreenAdapter {
 
         entityEngine.addEntity(test);
         entityEngine.addEntity(PlatformFactory.createPlatform(0, 0,300, 50));
-        entityEngine.addEntity(PlatformFactory.createPlatform(0, 0,50, 300));
-//        entityEngine.addEntity(PlatformFactory.createPlatform(0, 0,300, 50));
+        entityEngine.addEntity(PlatformFactory.createPlatform(350, 60,300, 50));
+        entityEngine.addEntity(PlatformFactory.createPlatform(0, 150,300, 50));
+        entityEngine.addEntity(PlatformFactory.createPlatform(0, 0,300, 50));
+
         shapeRenderer.setAutoShapeType(true);
     }
 

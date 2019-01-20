@@ -20,7 +20,7 @@ public class SensorFactory {
      * @param vertical - Whether the sensor should be vertical
      * @return The sensor fixture for assignment or chaining
      */
-    public static Fixture createCollideFixture(Body body, float w, float h, Vector2 offset, boolean vertical) {
+    public static Fixture createCollideFixture(Body body, float w, float h, Vector2 offset, boolean vertical, float ppm) {
         float width = 0, height = 0;
         FixtureDef fdef = new FixtureDef();
         fdef.isSensor = true;
@@ -35,7 +35,10 @@ public class SensorFactory {
             height = h / Constants.DETECTOR_WIDTH;
         }
 
-        sensorShape.setAsBox(width, height, offset, 0);
+        width /= ppm;
+        height /= ppm;
+
+        sensorShape.setAsBox(width, height, new Vector2(offset).scl(1/ppm), 0);
         fdef.shape = sensorShape;
 
         Fixture fixture = body.createFixture(fdef);

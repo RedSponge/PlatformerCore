@@ -15,6 +15,7 @@ public class PhysicsComponent implements Component {
     /**
      * The type of the body
      */
+
     public BodyType type = BodyType.DynamicBody;
     public Body body;
 

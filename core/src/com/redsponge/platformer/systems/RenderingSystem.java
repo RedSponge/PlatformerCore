@@ -6,6 +6,7 @@ import com.badlogic.ashley.systems.SortedIteratingSystem;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.redsponge.platformer.components.Mappers;
 import com.redsponge.platformer.components.PositionComponent;
@@ -30,7 +31,7 @@ public class RenderingSystem extends SortedIteratingSystem {
     public void update(float deltaTime) {
 
         PositionComponent position = Mappers.position.get(player);
-        viewport.getCamera().position.set(position.x, position.y, 0);
+        viewport.getCamera().position.lerp(new Vector3(position.x, position.y, 0), 1);
         viewport.apply();
 
         shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);

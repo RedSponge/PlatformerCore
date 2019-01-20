@@ -26,16 +26,18 @@ public class PhysicsSystem extends IteratingSystem implements EntityListener {
 
     private Vector2 gravity;
     private World world;
+    private float pixelsPerMeter;
 
-    public PhysicsSystem(Vector2 gravity) {
+    public PhysicsSystem(Vector2 gravity, float pixelsPerMeter) {
         super(Family.all(PositionComponent.class, SizeComponent.class, VelocityComponent.class, PhysicsComponent.class).get(), Constants.PHYSICS_PRIORITY);
         this.gravity = gravity;
+        this.pixelsPerMeter = pixelsPerMeter;
         this.world = new World(this.gravity, true);
         this.world.setContactListener(new CollisionManager());
     }
 
     public PhysicsSystem() {
-        this(Constants.DEFAULT_GRAVITY);
+        this(Constants.DEFAULT_GRAVITY, Constants.DEFAULT_PPM);
     }
 
     @Override
@@ -49,8 +51,8 @@ public class PhysicsSystem extends IteratingSystem implements EntityListener {
         PositionComponent pos = Mappers.position.get(entity);
         PhysicsComponent physics = Mappers.physics.get(entity);
 
-        pos.x = physics.body.getPosition().x;
-        pos.y = physics.body.getPosition().y;
+        pos.x = physics.body.getPosition().x * pixelsPerMeter;
+        pos.y = physics.body.getPosition().y * pixelsPerMeter;
     }
 
     /**
@@ -84,7 +86,7 @@ public class PhysicsSystem extends IteratingSystem implements EntityListener {
         // Body Creation
         BodyDef bdef = new BodyDef();
         bdef.type = physics.type;
-        bdef.position.set(pos.x, pos.y);
+        bdef.position.set(pos.x / pixelsPerMeter, pos.y / pixelsPerMeter);
 
         Body body = world.createBody(bdef);
         body.setUserData(entity);
@@ -93,7 +95,7 @@ public class PhysicsSystem extends IteratingSystem implements EntityListener {
         FixtureDef collider = new FixtureDef();
 
         PolygonShape shape = new PolygonShape();
-        shape.setAsBox(size.width/2, size.height/2);
+        shape.setAsBox((size.width / 2) / pixelsPerMeter, (size.height / 2) / pixelsPerMeter);
         collider.shape = shape;
         collider.friction = 0;
 
@@ -105,10 +107,10 @@ public class PhysicsSystem extends IteratingSystem implements EntityListener {
             return;
         }
 
-        colliderComp.down = SensorFactory.createCollideFixture(physics.body, size.width, size.height, new Vector2(0, -size.height / 2), false);
-        colliderComp.up = SensorFactory.createCollideFixture(physics.body, size.width, size.height, new Vector2(0, size.height / 2), false);
-        colliderComp.left = SensorFactory.createCollideFixture(physics.body, size.width, size.height, new Vector2(-size.width / 2, 0), true);
-        colliderComp.right = SensorFactory.createCollideFixture(physics.body, size.width, size.height, new Vector2(size.width / 2, 0), true);
+        colliderComp.down = SensorFactory.createCollideFixture(physics.body, size.width, size.height, new Vector2(0, -size.height / 2), false, pixelsPerMeter);
+        colliderComp.up = SensorFactory.createCollideFixture(physics.body, size.width, size.height, new Vector2(0, size.height / 2), false, pixelsPerMeter);
+        colliderComp.left = SensorFactory.createCollideFixture(physics.body, size.width, size.height, new Vector2(-size.width / 2, 0), true, pixelsPerMeter);
+        colliderComp.right = SensorFactory.createCollideFixture(physics.body, size.width, size.height, new Vector2(size.width / 2, 0), true, pixelsPerMeter);
     }
 
     @Override

@@ -15,7 +15,7 @@ public class Constants {
     public static final int PHYSICS_PRIORITY = 2;
     public static final int RENDERING_PRIORITY = 3;
 
-    public static final float DETECTOR_WIDTH = 4;
+    public static final float DETECTOR_WIDTH = 3;
     public static final float DETECTOR_HEIGHT = 10;
     
     public static final int PHYSICS_POSITION_ITERATIONS = 3;
@@ -23,4 +23,14 @@ public class Constants {
 
     public static final int BODY_USER_DATA = 0;
     public static final int SENSOR_DATA_ID = 1;
+
+    public static final float DEFAULT_PPM = 32;
+    public static final float FRICTION_MULTIPLIER = 0.9f;
+    public static final float CHANGE_DIRECTION_MULTIPLIER = 10;
+
+    public static final float DEFAULT_JUMP_START_MULTIPLIER = 5; // Multiplies the jump height when the player initially presses the jump button
+    public static final float DEFAULT_FALL_AMPLIFIER = -0.5f; // Added to the gravity when the player is falling
+
+    public static final float DEFAULT_JUMP_HEIGHT = 8;
+    public static final float DEFAULT_PLAYER_SPEED = 20;
 }
