@@ -48,7 +48,7 @@ public class TestScreen extends ScreenAdapter {
 
     @Override
     public void show() {
-        this.gameViewport = new FitViewport(1600, 900);
+        this.gameViewport = new FitViewport(640, 360);
         this.entityEngine = new Engine();
         this.test = new Entity();
         this.test.add(new PositionComponent(300, 300));
@@ -80,7 +80,6 @@ public class TestScreen extends ScreenAdapter {
         physicsSystem.createWorldObjects(map);
 
         shapeRenderer.setAutoShapeType(true);
-
         mapRenderer = new OrthogonalTiledMapRenderer(map, batch);
     }
 
