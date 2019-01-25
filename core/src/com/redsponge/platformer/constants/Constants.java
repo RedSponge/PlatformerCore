@@ -13,7 +13,8 @@ public class Constants {
 
     public static final int PLAYER_PRIORITY = 1;
     public static final int PHYSICS_PRIORITY = 2;
-    public static final int RENDERING_PRIORITY = 3;
+    public static final int MAP_RENDERING_PRIORITIES = 3;
+    public static final int RENDERING_PRIORITY = 4;
 
     public static final float DETECTOR_WIDTH = 3;
     public static final float DETECTOR_HEIGHT = 10;

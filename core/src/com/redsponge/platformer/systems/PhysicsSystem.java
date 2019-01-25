@@ -4,12 +4,20 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
+import com.badlogic.gdx.maps.MapLayer;
+import com.badlogic.gdx.maps.MapLayers;
+import com.badlogic.gdx.maps.MapObject;
+import com.badlogic.gdx.maps.MapProperties;
+import com.badlogic.gdx.maps.objects.RectangleMapObject;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.utils.Array;
 import com.redsponge.platformer.components.ColliderComponent;
 import com.redsponge.platformer.components.Mappers;
 import com.redsponge.platformer.components.PhysicsComponent;
@@ -69,6 +77,20 @@ public class PhysicsSystem extends IteratingSystem implements EntityListener {
      */
     public Vector2 getGravity() {
         return gravity;
+    }
+
+    /**
+     * Create the platforms for the world
+     * @param map - The world map
+     */
+    public void createWorldObjects(TiledMap map) {
+        MapLayer layer = map.getLayers().get("Collidables");
+
+        for (RectangleMapObject rect : layer.getObjects().getByType(RectangleMapObject.class)) {
+            Rectangle r = rect.getRectangle();
+            System.out.println(r.x + " " + r.y + " " + r.width + " " + r.height);
+            this.getEngine().addEntity(PlatformFactory.createPlatform(r.x + r.width / 2, r.y + r.height / 2, r.width, r.height));
+        }
     }
 
     /**

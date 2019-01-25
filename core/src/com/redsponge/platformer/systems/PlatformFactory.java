@@ -1,4 +1,4 @@
-package com.redsponge.platformer.test;
+package com.redsponge.platformer.systems;
 
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;

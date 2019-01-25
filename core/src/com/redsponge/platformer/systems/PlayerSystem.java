@@ -111,7 +111,7 @@ public class PlayerSystem extends IteratingSystem {
         }
 
         if(Gdx.input.isKeyJustPressed(Keys.R)) {
-            body.setTransform(0 / pixelsPerMeter, 200 / pixelsPerMeter, 0);
+            body.setTransform(300 / pixelsPerMeter, 300 / pixelsPerMeter, 0);
             body.setLinearVelocity(0, 0);
         }
     }
