@@ -85,10 +85,10 @@ public class PhysicsSystem extends IteratingSystem implements EntityListener {
      */
     public void createWorldObjects(TiledMap map) {
         MapLayer layer = map.getLayers().get("Collidables");
+        //for(MapLayer layer : map.getLayers().getByType(TiledMap))
 
         for (RectangleMapObject rect : layer.getObjects().getByType(RectangleMapObject.class)) {
             Rectangle r = rect.getRectangle();
-            System.out.println(r.x + " " + r.y + " " + r.width + " " + r.height);
             this.getEngine().addEntity(PlatformFactory.createPlatform(r.x + r.width / 2, r.y + r.height / 2, r.width, r.height));
         }
     }
@@ -117,7 +117,7 @@ public class PhysicsSystem extends IteratingSystem implements EntityListener {
         FixtureDef collider = new FixtureDef();
 
         PolygonShape shape = new PolygonShape();
-        shape.setAsBox((size.width / 2) / pixelsPerMeter, (size.height / 2) / pixelsPerMeter);
+        shape.setAsBox((size.width / 2 - pixelsPerMeter * 0.01f) / pixelsPerMeter, (size.height / 2  - pixelsPerMeter * 0.01f) / pixelsPerMeter);
         collider.shape = shape;
         collider.friction = 0;
 

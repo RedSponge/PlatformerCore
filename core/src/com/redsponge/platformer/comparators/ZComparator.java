@@ -1,4 +1,4 @@
-package com.redsponge.platformer.systems;
+package com.redsponge.platformer.comparators;
 
 import com.badlogic.ashley.core.Entity;
 import com.redsponge.platformer.components.Mappers;

@@ -29,9 +29,10 @@ public class Constants {
     public static final float FRICTION_MULTIPLIER = 0.9f;
     public static final float CHANGE_DIRECTION_MULTIPLIER = 10;
 
-    public static final float DEFAULT_JUMP_START_MULTIPLIER = 5; // Multiplies the jump height when the player initially presses the jump button
     public static final float DEFAULT_FALL_AMPLIFIER = -0.5f; // Added to the gravity when the player is falling
 
     public static final float DEFAULT_JUMP_HEIGHT = 8;
     public static final float DEFAULT_PLAYER_SPEED = 20;
+    public static final float DEFAULT_MAX_SPEED = 20;
+    public static final float DEFAULT_WALL_HOLD_VELOCITY = -5;
 }

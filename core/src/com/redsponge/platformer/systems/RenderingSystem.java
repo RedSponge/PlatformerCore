@@ -4,15 +4,22 @@ import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.SortedIteratingSystem;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
-import com.badlogic.gdx.maps.MapLayers;
+import com.badlogic.gdx.maps.MapRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TiledMapRenderer;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.redsponge.platformer.comparators.MapLayerComparator;
+import com.redsponge.platformer.comparators.ZComparator;
 import com.redsponge.platformer.components.Mappers;
 import com.redsponge.platformer.components.PositionComponent;
 import com.redsponge.platformer.components.SizeComponent;
@@ -29,8 +36,10 @@ public class RenderingSystem extends SortedIteratingSystem {
     private TiledMap map;
     private OrthogonalTiledMapRenderer mapRenderer;
 
-    private int[] background;
-    private int[] foreground;
+    private int backgroundForegroundSeparator;
+
+    private MapLayerComparator mapLayerComparator;
+    private TiledMapTileLayer[] renderLayers;
 
     public RenderingSystem(ShapeRenderer shapeRenderer, SpriteBatch batch, Viewport viewport, Entity player, TiledMap map) {
         super(Family.all(PositionComponent.class, SizeComponent.class).get(), new ZComparator(), Constants.RENDERING_PRIORITY);
@@ -40,11 +49,57 @@ public class RenderingSystem extends SortedIteratingSystem {
         this.viewport = viewport;
         this.map = map;
         this.mapRenderer = new OrthogonalTiledMapRenderer(map, this.batch);
+        this.mapLayerComparator = new MapLayerComparator();
+
+        sortLayers();
+    }
+
+    private void sortLayers() {
+        Array<TiledMapTileLayer> layers = this.map.getLayers().getByType(TiledMapTileLayer.class);
+        layers.sort(mapLayerComparator);
+        renderLayers = layers.toArray(TiledMapTileLayer.class);
+
+        // Finding Separator
+        int lastZ = -1;
+        boolean found = false;
+        int i = 0;
+
+        for(i = 0; i < renderLayers.length && !found; i++) {
+                final int z = Integer.parseInt((String) renderLayers[i].getProperties().get("z"));
+            if(z > 0 && lastZ < 0) {
+                found = true;
+                backgroundForegroundSeparator = i;
+                Gdx.app.log("Rendering System", "Found: " + z + " " + lastZ + " " + i);
+            } else {
+                lastZ = z;
+            }
+            Gdx.app.log("Rendering System", "" + found);
+        }
+        Gdx.app.log("Rendering System", "Map Layer Foreground Background Separator Is " + backgroundForegroundSeparator);
     }
 
 
     @Override
     public void update(float deltaTime) {
+        setupCameraAndMatrices();
+        AnimatedTiledMapTile.updateAnimationBaseTime();
+        renderBackground();
+
+        // TODO: Render all entities based on texture / animation components
+
+        shapeRenderer.begin(ShapeType.Filled);
+
+        SizeComponent size = Mappers.size.get(player);
+        PositionComponent pos = Mappers.position.get(player);
+
+        shapeRenderer.rect(pos.x-size.width/2, pos.y-size.height/2, size.width, size.height);
+        //super.update(deltaTime);
+        shapeRenderer.end();
+
+        renderForeground();
+    }
+
+    private void setupCameraAndMatrices() {
         PositionComponent pos = Mappers.position.get(player);
 
         viewport.getCamera().position.set(pos.x, pos.y, 0);
@@ -53,12 +108,22 @@ public class RenderingSystem extends SortedIteratingSystem {
 
         shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
         batch.setProjectionMatrix(viewport.getCamera().combined);
+    }
 
-        mapRenderer.render();
+    private void renderBackground() {
+        batch.begin();
+        for(int i = 0; i < backgroundForegroundSeparator; i++) {
+            mapRenderer.renderTileLayer(renderLayers[i]);
+        }
+        batch.end();
+    }
 
-        shapeRenderer.begin(ShapeType.Filled);
-        super.update(deltaTime);
-        shapeRenderer.end();
+    private void renderForeground() {
+        batch.begin();
+        for(int i = backgroundForegroundSeparator; i < renderLayers.length; i++) {
+            mapRenderer.renderTileLayer(renderLayers[i]);
+        }
+        batch.end();
     }
 
     @Override

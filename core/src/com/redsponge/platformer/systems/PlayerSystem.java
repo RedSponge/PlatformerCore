@@ -18,37 +18,40 @@ public class PlayerSystem extends IteratingSystem {
 
     private float jumpHeight;
     private float speed;
+    private float maxSpeed;
     private float jumpMaxTime;
     private long jumpStartTime;
+    private long wallJumpStartTime;
     private float pixelsPerMeter;
 
 
     private float fallAmplifier;
-    private float jumpStartMultiplier;
 
     // Flags
     private boolean onGround;
     private boolean jumping;
     private boolean moving;
-    private boolean releasedJumpButton;
     private boolean holdingWall;
 
     // Show Debug Messages
     private static final boolean DEBUG = false;
+    private float wallHoldVelocity;
 
-    public PlayerSystem(float jumpHeight, float speed, float jumpMaxTime, float pixelsPerMeter, float fallAmplifier, float jumpStartMultiplier) {
+    public PlayerSystem(float jumpHeight, float speed, float maxSpeed, float jumpMaxTime, float pixelsPerMeter, float fallAmplifier, float wallHoldVelocity) {
         super(Family.all(PlayerComponent.class).get(), Constants.PLAYER_PRIORITY);
         this.jumpHeight = jumpHeight;
         this.speed = speed;
+        this.maxSpeed = maxSpeed;
         this.jumpMaxTime = jumpMaxTime;
         this.pixelsPerMeter = pixelsPerMeter;
         this.fallAmplifier = fallAmplifier;
-        this.jumpStartMultiplier = jumpStartMultiplier;
+        this.wallHoldVelocity = wallHoldVelocity;
         this.jumpStartTime = 0;
+        this.wallJumpStartTime = 0;
     }
 
     public PlayerSystem() {
-        this(Constants.DEFAULT_JUMP_HEIGHT, Constants.DEFAULT_PLAYER_SPEED, 0.15f, Constants.DEFAULT_PPM, Constants.DEFAULT_FALL_AMPLIFIER, Constants.DEFAULT_JUMP_START_MULTIPLIER);
+        this(Constants.DEFAULT_JUMP_HEIGHT, Constants.DEFAULT_PLAYER_SPEED, Constants.DEFAULT_MAX_SPEED, 0.15f, Constants.DEFAULT_PPM, Constants.DEFAULT_FALL_AMPLIFIER, Constants.DEFAULT_WALL_HOLD_VELOCITY);
     }
 
     @Override
@@ -63,26 +66,40 @@ public class PlayerSystem extends IteratingSystem {
             if(onGround && !jumping) {
                 startJump(body);
             } else if(collider.rightTouches > 0 && Gdx.input.isKeyJustPressed(Keys.SPACE)) {
-                body.setLinearVelocity(-20, 15);
+                if(Gdx.input.isKeyPressed(Keys.RIGHT) || Gdx.input.isKeyPressed(Keys.LEFT)) {
+                    body.setLinearVelocity(-20, 10);
+                    wallJumpStartTime = TimeUtils.nanoTime();
+                } else {
+                    body.setLinearVelocity(-5, 10);
+                }
             } else if(collider.leftTouches > 0 && Gdx.input.isKeyJustPressed(Keys.SPACE)) {
-                body.setLinearVelocity(20, 15);
+                if(Gdx.input.isKeyPressed(Keys.RIGHT) || Gdx.input.isKeyPressed(Keys.LEFT)) {
+                    body.setLinearVelocity(20, 10);
+                    wallJumpStartTime = TimeUtils.nanoTime();
+                    System.out.println("Hard Push!");
+                } else {
+                    body.setLinearVelocity(5, 10);
+                }
             } else if(jumping) {
                 continueJump(body, deltaTime);
             }
         } else {
-            releasedJumpButton = true;
             if(jumping) {
                 endJump(body, true);
             }
         }
 
-        if(!jumping && !onGround && !holdingWall) {
+        if(!jumping && !onGround) {
             body.applyLinearImpulse(new Vector2(0, fallAmplifier), body.getWorldCenter(), true);
+        }
+        if(holdingWall && !onGround) {
+            if(body.getLinearVelocity().y < wallHoldVelocity) {
+                body.setLinearVelocity(body.getLinearVelocity().x, wallHoldVelocity);
+            }
         }
 
 
-
-        if(Gdx.input.isKeyPressed(Keys.RIGHT)) {
+        if(Gdx.input.isKeyPressed(Keys.RIGHT) && (TimeUtils.nanoTime() - wallJumpStartTime) / 1000000000f > 0.2f) {
             if(body.getLinearVelocity().x < 0) {
                 _DEBUG("Changing Direction To Right!");
 
@@ -93,7 +110,7 @@ public class PlayerSystem extends IteratingSystem {
             moving = true;
         }
 
-        if(Gdx.input.isKeyPressed(Keys.LEFT)) {
+        if(Gdx.input.isKeyPressed(Keys.LEFT) && (TimeUtils.nanoTime() - wallJumpStartTime) / 1000000000f > 0.2f) {
             if(body.getLinearVelocity().x > 0) {
                 _DEBUG("Changing Direction To Left!");
 
@@ -110,10 +127,28 @@ public class PlayerSystem extends IteratingSystem {
             }
         }
 
+        clampSpeed(body);
+
         if(Gdx.input.isKeyJustPressed(Keys.R)) {
-            body.setTransform(300 / pixelsPerMeter, 300 / pixelsPerMeter, 0);
+            body.setTransform(500 / pixelsPerMeter, 500 / pixelsPerMeter, 0);
             body.setLinearVelocity(0, 0);
         }
+    }
+
+    private void clampSpeed(Body body) {
+        float newVx = body.getLinearVelocity().x;
+        float newVy = body.getLinearVelocity().y;
+
+        if(Math.abs(newVx) > maxSpeed)
+        {
+            newVx = maxSpeed * Math.signum(newVx);
+        }
+        if(Math.abs(newVy) > maxSpeed)
+        {
+            newVy = maxSpeed * Math.signum(newVy);
+        }
+
+        body.setLinearVelocity(newVx, newVy);
     }
 
     /**
