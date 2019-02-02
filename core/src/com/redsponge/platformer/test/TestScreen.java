@@ -48,6 +48,10 @@ public class TestScreen extends ScreenAdapter {
 
     @Override
     public void show() {
+        init();
+    }
+
+    private void init() {
         this.gameViewport = new FitViewport(640, 360);
         this.entityEngine = new Engine();
         this.test = new Entity();
@@ -90,6 +94,9 @@ public class TestScreen extends ScreenAdapter {
 
         if(Gdx.input.isKeyPressed(Keys.ESCAPE)) {
             Gdx.app.exit();
+        }
+        if(Gdx.input.isKeyPressed(Keys.NUM_1)) {
+            init();
         }
 
         entityEngine.update(delta);

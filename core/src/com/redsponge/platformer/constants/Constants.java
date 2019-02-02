@@ -33,6 +33,6 @@ public class Constants {
 
     public static final float DEFAULT_JUMP_HEIGHT = 8;
     public static final float DEFAULT_PLAYER_SPEED = 20;
-    public static final float DEFAULT_MAX_SPEED = 20;
+    public static final float DEFAULT_MAX_SPEED = 10;
     public static final float DEFAULT_WALL_HOLD_VELOCITY = -5;
 }

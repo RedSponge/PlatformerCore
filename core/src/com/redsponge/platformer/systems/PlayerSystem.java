@@ -100,7 +100,7 @@ public class PlayerSystem extends IteratingSystem {
     private void updateJumping(Body body, float deltaTime) {
         if(input.isJumping()) {
             if(onGround && !jumping) {
-                startJump(body);
+                startJump(body, deltaTime);
             } else if(jumping) {
                 continueJump(body, deltaTime);
             }
@@ -168,7 +168,7 @@ public class PlayerSystem extends IteratingSystem {
         }
 
         // Slow down fall when holding wall
-        if(holdingWall) {
+        if(holdingWall && input.getHorizontal() != 0) {
             if(body.getLinearVelocity().y < wallHoldVelocity) {
                 body.setLinearVelocity(body.getLinearVelocity().x, wallHoldVelocity);
             }
@@ -202,10 +202,10 @@ public class PlayerSystem extends IteratingSystem {
      * Begins a jump with a small boost
      * @param body - The box2d {@link Body} of the player
      */
-    private void startJump(Body body) {
+    private void startJump(Body body, float delta) {
         jumping = true;
         jumpStartTime = TimeUtils.nanoTime();
-        body.applyLinearImpulse(new Vector2(0, jumpHeight), body.getWorldCenter(), true);
+        body.applyLinearImpulse(new Vector2(0, jumpHeight * delta * 50), body.getWorldCenter(), true);
     }
 
     /**
