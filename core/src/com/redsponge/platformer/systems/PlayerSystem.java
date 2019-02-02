@@ -12,6 +12,8 @@ import com.redsponge.platformer.components.ColliderComponent;
 import com.redsponge.platformer.components.Mappers;
 import com.redsponge.platformer.components.PlayerComponent;
 import com.redsponge.platformer.constants.Constants;
+import com.redsponge.platformer.input.InputSystem;
+import com.redsponge.platformer.input.SimpleInputSystem;
 
 public class PlayerSystem extends IteratingSystem {
 
@@ -26,18 +28,18 @@ public class PlayerSystem extends IteratingSystem {
 
 
     private float fallAmplifier;
-
     // Flags
     private boolean onGround;
     private boolean jumping;
-    private boolean moving;
     private boolean holdingWall;
 
     // Show Debug Messages
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     private float wallHoldVelocity;
 
-    public PlayerSystem(float jumpHeight, float speed, float maxSpeed, float jumpMaxTime, float pixelsPerMeter, float fallAmplifier, float wallHoldVelocity) {
+    private InputSystem input;
+
+    public PlayerSystem(float jumpHeight, float speed, float maxSpeed, float jumpMaxTime, float pixelsPerMeter, float fallAmplifier, float wallHoldVelocity, InputSystem inputSystem) {
         super(Family.all(PlayerComponent.class).get(), Constants.PLAYER_PRIORITY);
         this.jumpHeight = jumpHeight;
         this.speed = speed;
@@ -46,12 +48,13 @@ public class PlayerSystem extends IteratingSystem {
         this.pixelsPerMeter = pixelsPerMeter;
         this.fallAmplifier = fallAmplifier;
         this.wallHoldVelocity = wallHoldVelocity;
+        this.input = inputSystem;
         this.jumpStartTime = 0;
         this.wallJumpStartTime = 0;
     }
 
     public PlayerSystem() {
-        this(Constants.DEFAULT_JUMP_HEIGHT, Constants.DEFAULT_PLAYER_SPEED, Constants.DEFAULT_MAX_SPEED, 0.15f, Constants.DEFAULT_PPM, Constants.DEFAULT_FALL_AMPLIFIER, Constants.DEFAULT_WALL_HOLD_VELOCITY);
+        this(Constants.DEFAULT_JUMP_HEIGHT, Constants.DEFAULT_PLAYER_SPEED, Constants.DEFAULT_MAX_SPEED, 0.15f, Constants.DEFAULT_PPM, Constants.DEFAULT_FALL_AMPLIFIER, Constants.DEFAULT_WALL_HOLD_VELOCITY, new SimpleInputSystem());
     }
 
     @Override
@@ -60,72 +63,14 @@ public class PlayerSystem extends IteratingSystem {
         ColliderComponent collider = Mappers.collider.get(entity);
 
         updateFlags(collider);
-        moving = false;
 
-        if(Gdx.input.isKeyPressed(Keys.SPACE)) {
-            if(onGround && !jumping) {
-                startJump(body);
-            } else if(collider.rightTouches > 0 && Gdx.input.isKeyJustPressed(Keys.SPACE)) {
-                if(Gdx.input.isKeyPressed(Keys.RIGHT) || Gdx.input.isKeyPressed(Keys.LEFT)) {
-                    body.setLinearVelocity(-20, 10);
-                    wallJumpStartTime = TimeUtils.nanoTime();
-                } else {
-                    body.setLinearVelocity(-5, 10);
-                }
-            } else if(collider.leftTouches > 0 && Gdx.input.isKeyJustPressed(Keys.SPACE)) {
-                if(Gdx.input.isKeyPressed(Keys.RIGHT) || Gdx.input.isKeyPressed(Keys.LEFT)) {
-                    body.setLinearVelocity(20, 10);
-                    wallJumpStartTime = TimeUtils.nanoTime();
-                    System.out.println("Hard Push!");
-                } else {
-                    body.setLinearVelocity(5, 10);
-                }
-            } else if(jumping) {
-                continueJump(body, deltaTime);
-            }
-        } else {
-            if(jumping) {
-                endJump(body, true);
-            }
-        }
+        updateJumping(body, deltaTime);
+        updateWallJumping(collider, body);
 
-        if(!jumping && !onGround) {
-            body.applyLinearImpulse(new Vector2(0, fallAmplifier), body.getWorldCenter(), true);
-        }
-        if(holdingWall && !onGround) {
-            if(body.getLinearVelocity().y < wallHoldVelocity) {
-                body.setLinearVelocity(body.getLinearVelocity().x, wallHoldVelocity);
-            }
-        }
+        updateStrafing(body, deltaTime);
 
-
-        if(Gdx.input.isKeyPressed(Keys.RIGHT) && (TimeUtils.nanoTime() - wallJumpStartTime) / 1000000000f > 0.2f) {
-            if(body.getLinearVelocity().x < 0) {
-                _DEBUG("Changing Direction To Right!");
-
-                body.applyLinearImpulse(new Vector2(speed * deltaTime * Constants.CHANGE_DIRECTION_MULTIPLIER, 0), body.getWorldCenter(), true);
-            } else {
-                body.applyLinearImpulse(new Vector2(speed * deltaTime, 0), body.getWorldCenter(), true);
-            }
-            moving = true;
-        }
-
-        if(Gdx.input.isKeyPressed(Keys.LEFT) && (TimeUtils.nanoTime() - wallJumpStartTime) / 1000000000f > 0.2f) {
-            if(body.getLinearVelocity().x > 0) {
-                _DEBUG("Changing Direction To Left!");
-
-                body.applyLinearImpulse(new Vector2(-speed * deltaTime * Constants.CHANGE_DIRECTION_MULTIPLIER, 0), body.getWorldCenter(), true);
-            } else {
-                body.applyLinearImpulse(new Vector2(-speed * deltaTime, 0), body.getWorldCenter(), true);
-            }
-            moving = true;
-        }
-
-        if(collider.downTouches > 0) {
-            if(!moving) {
-                body.setLinearVelocity(body.getLinearVelocity().x * Constants.FRICTION_MULTIPLIER, body.getLinearVelocity().y);
-            }
-        }
+        applyFriction(body);
+        updateFallVelocity(body);
 
         clampSpeed(body);
 
@@ -135,6 +80,105 @@ public class PlayerSystem extends IteratingSystem {
         }
     }
 
+    /**
+     * Updates the flags of the player
+     * @param collider - The {@link ColliderComponent} instance of the {@link Entity}
+     */
+    private void updateFlags(ColliderComponent collider) {
+        onGround = collider.downTouches > 0;
+        holdingWall = collider.rightTouches > 0 || collider.leftTouches > 0;
+    }
+
+
+
+    //region Input && Movement
+    /**
+     * Detects jumps and updates jump status
+     * @param body - The player's {@link Body}
+     * @param deltaTime The delta time since the last frame
+     */
+    private void updateJumping(Body body, float deltaTime) {
+        if(input.isJumping()) {
+            if(onGround && !jumping) {
+                startJump(body);
+            } else if(jumping) {
+                continueJump(body, deltaTime);
+            }
+        } else {
+            if(jumping) {
+                endJump(body, true);
+            }
+        }
+    }
+
+    /**
+     * Detects wall jumps and updates wall jump status
+     * @param collider - The player's {@link ColliderComponent}
+     * @param body - The player's {@link Body}
+     */
+    private void updateWallJumping(ColliderComponent collider, Body body) {
+        if(input.isJustJumping() && !jumping && holdingWall) {
+            int side = collider.rightTouches > 0 ? -1 : 1;
+            if(input.getHorizontal() != 0) {
+                wallJumpStartTime = TimeUtils.nanoTime(); // Block arrow use for x time
+            }
+            body.setLinearVelocity(5 * side, 10);
+        }
+    }
+
+    /**
+     * Detects strafing input and updates movement
+     * @param body - The player's {@link Body}
+     * @param deltaTime - The delta time since the last frame
+     */
+    private void updateStrafing(Body body, float deltaTime) {
+        if(TimeUtils.timeSinceNanos(wallJumpStartTime) / 1000000000f > 0.2f) {
+            int horiz = input.getHorizontal();
+            if(horiz != 0) {
+                if(horiz != Math.signum(body.getLinearVelocity().x)) {
+                    body.applyLinearImpulse(new Vector2(horiz * speed * deltaTime * Constants.CHANGE_DIRECTION_MULTIPLIER, 0), body.getWorldCenter(), true);
+                } else {
+                    body.applyLinearImpulse(new Vector2(horiz * speed * deltaTime, 0), body.getWorldCenter(), true);
+                }
+            }
+        }
+    }
+    //endregion
+
+    //region Velocity tweaking
+    /**
+     * Applies friction to the player's character when on ground and not moving
+     * @param body - The player's {@link Body}
+     */
+    private void applyFriction(Body body) {
+        if(onGround && input.getHorizontal() == 0) {
+            body.setLinearVelocity(body.getLinearVelocity().x * Constants.FRICTION_MULTIPLIER, body.getLinearVelocity().y);
+        }
+    }
+
+    /**
+     * Updates the player's y velocity:
+     * if the player is air-born and isn't jumping: stronger gravity
+     * if the player is holding a wall: softer gravity
+     * @param body - The player's {@link Body}
+     */
+    private void updateFallVelocity(Body body) {
+        if(!onGround && !jumping) {
+            body.applyLinearImpulse(new Vector2(0, fallAmplifier), body.getWorldCenter(), true);
+        }
+
+        // Slow down fall when holding wall
+        if(holdingWall) {
+            if(body.getLinearVelocity().y < wallHoldVelocity) {
+                body.setLinearVelocity(body.getLinearVelocity().x, wallHoldVelocity);
+            }
+        }
+    }
+
+    /**
+     * Clamps the speed of the player to {@link PlayerSystem#maxSpeed}
+     * @param body - The player's {@link Body}
+     */
     private void clampSpeed(Body body) {
         float newVx = body.getLinearVelocity().x;
         float newVy = body.getLinearVelocity().y;
@@ -150,19 +194,9 @@ public class PlayerSystem extends IteratingSystem {
 
         body.setLinearVelocity(newVx, newVy);
     }
+    //endregion
 
-    /**
-     * Updates the flags of the player
-     * @param collider - The {@link ColliderComponent} instance of the {@link Entity}
-     */
-    private void updateFlags(ColliderComponent collider) {
-        moving = false;
-        onGround = collider.downTouches > 0;
-        holdingWall = collider.rightTouches > 0 || collider.leftTouches > 0;
-    }
-
-
-
+    //region Jumping
     /////////////////////// JUMP METHODS ////////////////////////////////
     /**
      * Begins a jump with a small boost
@@ -206,6 +240,7 @@ public class PlayerSystem extends IteratingSystem {
             body.setLinearVelocity(body.getLinearVelocity().x, 0.5f);
         }
     }
+    //endregion
 
     /////////////////////////// Utility //////////////////////////////
 
