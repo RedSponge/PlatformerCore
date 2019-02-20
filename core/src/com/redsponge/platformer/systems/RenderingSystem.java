@@ -16,6 +16,7 @@ import com.badlogic.gdx.maps.tiled.TiledMapRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.maps.tiled.tiles.AnimatedTiledMapTile;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.redsponge.platformer.comparators.MapLayerComparator;
@@ -102,7 +103,7 @@ public class RenderingSystem extends SortedIteratingSystem {
     private void setupCameraAndMatrices() {
         PositionComponent pos = Mappers.position.get(player);
 
-        viewport.getCamera().position.set(pos.x, pos.y, 0);
+        viewport.getCamera().position.lerp(new Vector3(pos.x, pos.y, 0), 0.1f);
         viewport.apply();
         mapRenderer.setView((OrthographicCamera) viewport.getCamera());
 

@@ -14,6 +14,7 @@ import com.redsponge.platformer.components.PlayerComponent;
 import com.redsponge.platformer.constants.Constants;
 import com.redsponge.platformer.input.InputSystem;
 import com.redsponge.platformer.input.SimpleInputSystem;
+import com.redsponge.platformer.utils.GeneralUtils;
 
 public class PlayerSystem extends IteratingSystem {
 
@@ -24,6 +25,8 @@ public class PlayerSystem extends IteratingSystem {
     private float jumpMaxTime;
     private long jumpStartTime;
     private long wallJumpStartTime;
+    private boolean takeControlWhileWallJump;
+
     private float pixelsPerMeter;
 
 
@@ -38,6 +41,7 @@ public class PlayerSystem extends IteratingSystem {
     private float wallHoldVelocity;
 
     private InputSystem input;
+    private float wallJumpLength;
 
     public PlayerSystem(float jumpHeight, float speed, float maxSpeed, float jumpMaxTime, float pixelsPerMeter, float fallAmplifier, float wallHoldVelocity, InputSystem inputSystem) {
         super(Family.all(PlayerComponent.class).get(), Constants.PLAYER_PRIORITY);
@@ -51,6 +55,8 @@ public class PlayerSystem extends IteratingSystem {
         this.input = inputSystem;
         this.jumpStartTime = 0;
         this.wallJumpStartTime = 0;
+        this.takeControlWhileWallJump = false;
+        this.wallJumpLength = 0.2f;
     }
 
     public PlayerSystem() {
@@ -120,9 +126,15 @@ public class PlayerSystem extends IteratingSystem {
         if(input.isJustJumping() && !jumping && holdingWall) {
             int side = collider.rightTouches > 0 ? -1 : 1;
             if(input.getHorizontal() != 0) {
-                wallJumpStartTime = TimeUtils.nanoTime(); // Block arrow use for x time
+                takeControlWhileWallJump = true;
+            } else {
+                takeControlWhileWallJump = false;
             }
+            wallJumpStartTime = TimeUtils.nanoTime();
             body.setLinearVelocity(5 * side, 10);
+        }
+        if(GeneralUtils.secondsSince(wallJumpStartTime) > wallJumpLength) {
+            takeControlWhileWallJump = false;
         }
     }
 
@@ -132,7 +144,7 @@ public class PlayerSystem extends IteratingSystem {
      * @param deltaTime - The delta time since the last frame
      */
     private void updateStrafing(Body body, float deltaTime) {
-        if(TimeUtils.timeSinceNanos(wallJumpStartTime) / 1000000000f > 0.2f) {
+        if(!takeControlWhileWallJump) {
             int horiz = input.getHorizontal();
             if(horiz != 0) {
                 if(horiz != Math.signum(body.getLinearVelocity().x)) {
@@ -163,7 +175,9 @@ public class PlayerSystem extends IteratingSystem {
      * @param body - The player's {@link Body}
      */
     private void updateFallVelocity(Body body) {
-        if(!onGround && !jumping) {
+        if(GeneralUtils.secondsSince(wallJumpStartTime) < wallJumpLength) {
+            body.applyLinearImpulse(new Vector2(0, fallAmplifier / 2), body.getWorldCenter(), true);
+        } else if(!onGround && !jumping) {
             body.applyLinearImpulse(new Vector2(0, fallAmplifier), body.getWorldCenter(), true);
         }
 

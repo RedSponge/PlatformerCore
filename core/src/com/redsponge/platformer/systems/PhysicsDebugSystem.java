@@ -5,6 +5,7 @@ import com.badlogic.ashley.core.EntitySystem;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.redsponge.platformer.constants.Constants;
 
 public class PhysicsDebugSystem extends EntitySystem {
 
@@ -21,7 +22,7 @@ public class PhysicsDebugSystem extends EntitySystem {
 
     @Override
     public void update(float deltaTime) {
-        debugRenderer.render(world, renderViewport.getCamera().combined);
+        debugRenderer.render(world, renderViewport.getCamera().combined.scl(Constants.DEFAULT_PPM));
     }
 
     @Override
