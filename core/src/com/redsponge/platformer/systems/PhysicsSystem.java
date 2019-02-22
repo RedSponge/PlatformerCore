@@ -4,20 +4,27 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapLayers;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapProperties;
+import com.badlogic.gdx.maps.objects.PolygonMapObject;
+import com.badlogic.gdx.maps.objects.PolylineMapObject;
 import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.ChainShape;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
+import com.badlogic.gdx.physics.box2d.Shape;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Array.ArrayIterator;
+import com.redsponge.platformer.components.ChainComponent;
 import com.redsponge.platformer.components.ColliderComponent;
 import com.redsponge.platformer.components.Mappers;
 import com.redsponge.platformer.components.PhysicsComponent;
@@ -25,7 +32,10 @@ import com.redsponge.platformer.components.PositionComponent;
 import com.redsponge.platformer.components.SizeComponent;
 import com.redsponge.platformer.components.VelocityComponent;
 import com.redsponge.platformer.constants.Constants;
+import com.redsponge.platformer.utils.GeneralUtils;
 import com.redsponge.platformer.utils.SensorFactory;
+
+import java.util.Iterator;
 
 /**
  * Handles gravity and movement
@@ -85,11 +95,14 @@ public class PhysicsSystem extends IteratingSystem implements EntityListener {
      */
     public void createWorldObjects(TiledMap map) {
         MapLayer layer = map.getLayers().get("Collidables");
-        //for(MapLayer layer : map.getLayers().getByType(TiledMap))
 
-        for (RectangleMapObject rect : layer.getObjects().getByType(RectangleMapObject.class)) {
-            Rectangle r = rect.getRectangle();
-            this.getEngine().addEntity(PlatformFactory.createPlatform(r.x + r.width / 2, r.y + r.height / 2, r.width, r.height));
+        for (PolylineMapObject obj : new ArrayIterator<PolylineMapObject>(layer.getObjects().getByType(PolylineMapObject.class))) {
+            Entity platform = PlatformFactory.createChainFloor(obj.getPolyline().getTransformedVertices());
+            this.getEngine().addEntity(platform);
+        }
+        for (PolygonMapObject obj : new ArrayIterator<PolygonMapObject>(layer.getObjects().getByType(PolygonMapObject.class))) {
+            Entity platform = PlatformFactory.createChainFloor(obj.getPolygon().getTransformedVertices());
+            this.getEngine().addEntity(platform);
         }
     }
 
@@ -103,6 +116,7 @@ public class PhysicsSystem extends IteratingSystem implements EntityListener {
         SizeComponent size = Mappers.size.get(entity);
         PositionComponent pos = Mappers.position.get(entity);
         ColliderComponent colliderComp = Mappers.collider.get(entity);
+        ChainComponent chain = Mappers.chain.get(entity);
 
 
         // Body Creation
@@ -116,8 +130,18 @@ public class PhysicsSystem extends IteratingSystem implements EntityListener {
 
         FixtureDef collider = new FixtureDef();
 
-        PolygonShape shape = new PolygonShape();
-        shape.setAsBox((size.width / 2 - pixelsPerMeter * 0.01f) / pixelsPerMeter, (size.height / 2  - pixelsPerMeter * 0.01f) / pixelsPerMeter);
+        Shape shape = null;
+        if(size != null) {
+            shape = new PolygonShape();
+            ((PolygonShape) shape).setAsBox((size.width / 2 - pixelsPerMeter * 0.01f) / pixelsPerMeter, (size.height / 2 - pixelsPerMeter * 0.01f) / pixelsPerMeter);
+        } else if(chain != null){
+            Gdx.app.log("PhysicsSystem", "CHAIN!");
+            shape = new ChainShape();
+            ((ChainShape)shape).createChain(GeneralUtils.divideAll(chain.vertices, pixelsPerMeter));
+        } else {
+            Gdx.app.error("PhysicsSystem", "Platform Type Isn't Recognized!", new RuntimeException("Error!"));
+            return;
+        }
         collider.shape = shape;
         collider.friction = 0;
 
@@ -125,7 +149,7 @@ public class PhysicsSystem extends IteratingSystem implements EntityListener {
         shape.dispose();
 
         // Sensors Creation
-        if(colliderComp == null) {
+        if(colliderComp == null || size == null) {
             return;
         }
 

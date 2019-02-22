@@ -71,7 +71,7 @@ public class TestScreen extends ScreenAdapter {
 
         PhysicsSystem physicsSystem = new PhysicsSystem(new Vector2(0, -10), Constants.DEFAULT_PPM);
         entityEngine.addSystem(physicsSystem);
-        entityEngine.addEntityListener(Family.all(SizeComponent.class, PositionComponent.class, PhysicsComponent.class).get(), physicsSystem);
+        entityEngine.addEntityListener(Family.all(PositionComponent.class, PhysicsComponent.class).get(), physicsSystem);
         entityEngine.addSystem(new PlayerSystem());
         entityEngine.addSystem(new PhysicsDebugSystem(physicsSystem.getWorld(), gameViewport));
 
